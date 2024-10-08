@@ -1,0 +1,6 @@
+@MadoMagiArchive_HostAddress = http://localhost:5192
+
+GET {{MadoMagiArchive_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

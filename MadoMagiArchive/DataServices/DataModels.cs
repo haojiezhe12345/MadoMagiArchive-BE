@@ -22,6 +22,9 @@ namespace MadoMagiArchive.DataServices.DataModels
         public string? Title { get; set; }
         public string? Description { get; set; }
         public string? Source { get; set; }
+        public int? Width { get; set; }
+        public int? Height { get; set; }
+        public TimeSpan? Duration { get; set; }
         public required string File { get; set; }
         public required long Size { get; set; }
 

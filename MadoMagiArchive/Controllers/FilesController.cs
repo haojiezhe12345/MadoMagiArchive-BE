@@ -150,7 +150,8 @@ namespace MadoMagiArchive.Controllers
             {
                 if (file.Length > 0)
                 {
-                    if (GetContentType(file.FileName) == "application/octet-stream") return new ApiResponse<IEnumerable<int>>(-1, "Uploaded file type not supported");
+                    var type = GetContentType(file.FileName);
+                    if (type == "application/octet-stream") return new ApiResponse<IEnumerable<int>>(-1, "Uploaded file type not supported");
 
                     var path = Path.Combine(UploadDirectory, Guid.NewGuid().ToString() + Path.GetExtension(file.FileName));
 
@@ -164,8 +165,20 @@ namespace MadoMagiArchive.Controllers
                         File = path,
                         Size = file.Length,
                         Owner = userContext.Id,
+                        Type = type,
                         //Permission = 0x00646464,
                     });
+
+                    if (type.StartsWith("image"))
+                    {
+                        stream.Seek(0, SeekOrigin.Begin);
+                        using var skImage = SKBitmap.Decode(stream);
+                        if (skImage != null)
+                        {
+                            fileEntity.Entity.Width = skImage.Width;
+                            fileEntity.Entity.Height = skImage.Height;
+                        }
+                    }
 
                     await dbContext.SaveChangesAsync();
 

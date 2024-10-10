@@ -1,4 +1,5 @@
 ﻿using Microsoft.OpenApi.Models;
+using Microsoft.EntityFrameworkCore;
 
 using MadoMagiArchive.CoreServices.Core;
 using MadoMagiArchive.CoreServices.User;
@@ -60,13 +61,13 @@ if (app.Environment.IsDevelopment())
     {
         using (var context = scope.ServiceProvider.GetRequiredService<CoreDbContext>())
         {
-            //context.Database.Migrate();
+            context.Database.Migrate();
             context.Database.EnsureCreated();
             context.SeedData();
         }
         using (var context = scope.ServiceProvider.GetRequiredService<DataDbContext>())
         {
-            //context.Database.Migrate();
+            context.Database.Migrate();
             context.Database.EnsureCreated();
             context.SeedData();
         }

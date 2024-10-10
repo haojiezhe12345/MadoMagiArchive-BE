@@ -12,7 +12,10 @@ namespace MadoMagiArchive.DataServices.DataModels
     [Index(nameof(File), IsUnique = true)]
     public class FileItem : BasePermissionItem
     {
-        protected override uint _permission { get; set; } = new Permission(1, 20, 100);
+        public FileItem()
+        {
+            _permission = new Permission(1, 20, 100);
+        }
         public int Id { get; set; }
         public string? Type { get; set; }
         public bool? R18 { get; set; }
@@ -46,7 +49,10 @@ namespace MadoMagiArchive.DataServices.DataModels
 
     public class Tag : BasePermissionItem
     {
-        protected override uint _permission { get; set; } = new Permission(1, 20, 100);
+        public Tag()
+        {
+            _permission = new Permission(1, 20, 100);
+        }
         public int Id { get; set; }
         public string? Type { get; set; }
         public int? ImageFile { get; set; }

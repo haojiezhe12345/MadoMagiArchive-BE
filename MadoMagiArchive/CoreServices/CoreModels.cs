@@ -7,11 +7,11 @@ namespace MadoMagiArchive.CoreServices.CoreModels
 {
     public class BasePermissionItem
     {
-        protected virtual uint _permission { get; set; } = 0x00016464;
+        protected uint _permission = 0x00016464;
         public uint Permission
         {
             get => _permission;
-            set => _permission = value & 0x00ffffff;
+            set => _permission = new Permission.Permission(value);
         }
         public int? Owner { get; set; }
     }
@@ -20,11 +20,11 @@ namespace MadoMagiArchive.CoreServices.CoreModels
     {
         public int Id { get; set; }
 
-        protected virtual uint _accessLevel { get; set; } = 0x00010101;
+        protected uint _accessLevel = 0x00010101;
         public uint AccessLevel
         {
             get => _accessLevel;
-            set => _accessLevel = value & 0x00ffffff;
+            set => _accessLevel = new Permission.Permission(value);
         }
 
         public List<UserSetting> Settings { get; set; } = [];

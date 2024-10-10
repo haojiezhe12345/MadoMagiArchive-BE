@@ -12,11 +12,7 @@ namespace MadoMagiArchive.CoreServices.User
 {
     public class UserContext(CoreDbContext coreDb)
     {
-        public UserItem User = new() { Id = UserService.AnonymousUserId };
-        public void SetUser(UserItem? user)
-        {
-            if (user != null) User = user;
-        }
+        public UserItem User { get; set; } = new() { Id = UserService.AnonymousUserId };
 
         public int Id => User.Id;
         public byte ReadLevel => User.GetReadLevel();
@@ -85,9 +81,10 @@ namespace MadoMagiArchive.CoreServices.User
             return await dbContext.Users.Include(x => x.Settings).SingleOrDefaultAsync(u => u.Id == id);
         }
 
-        public async Task<UserItem?> GetUserByToken(string? token)
+        public async Task<UserItem> GetUserByToken(string? token)
         {
-            return await GetUserById(await GetUserIdByToken(token));
+            var userId = await GetUserIdByToken(token);
+            return await GetUserById(userId) ?? new() { Id = userId };
         }
     }
 
@@ -98,10 +95,9 @@ namespace MadoMagiArchive.CoreServices.User
             var userService = httpContext.RequestServices.GetRequiredService<UserService>();
             var userContext = httpContext.RequestServices.GetRequiredService<UserContext>();
 
-            userContext.SetUser(
-                await userService.GetUserByToken(
+            userContext.User = await userService.GetUserByToken(
                     (string?)httpContext.Request.Headers["token"] ?? httpContext.Request.Cookies["token"]
-                ));
+                );
             httpContext.Response.Headers["User-Id"] = userContext.Id.ToString();
 
             await next(httpContext);

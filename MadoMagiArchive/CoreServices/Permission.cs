@@ -26,7 +26,7 @@ namespace MadoMagiArchive.CoreServices.Permission
 
     public class Permission
     {
-        public uint _permission;
+        private uint _permission;
         public byte Read => (byte)((_permission & 0x00ff0000) / 0x10000);
         public byte Write => (byte)((_permission & 0x0000ff00) / 0x100);
         public byte Delete => (byte)(_permission & 0x000000ff);
@@ -38,7 +38,7 @@ namespace MadoMagiArchive.CoreServices.Permission
 
         public Permission(uint permission)
         {
-            _permission = permission;
+            _permission = permission & 0x00ffffff;
         }
 
         public uint ToUint() => _permission;

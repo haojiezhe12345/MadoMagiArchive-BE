@@ -9,6 +9,7 @@ using MadoMagiArchive.DataServices.DataModels;
 using MadoMagiArchive.CoreServices.Api;
 using MadoMagiArchive.CoreServices.User;
 using MadoMagiArchive.CoreServices.Permission;
+using MadoMagiArchive.FileServices.Media;
 
 
 namespace MadoMagiArchive.Controllers
@@ -91,27 +92,30 @@ namespace MadoMagiArchive.Controllers
 
             var thumbDir = Path.Combine(StorageLocation, UploadDirectory, "thumbs");
             var thumbFile = Path.Combine(thumbDir, $"tmb_{id}.jpg");
+            var sourceFile = Path.Combine(StorageLocation, fileItem.File);
+
+            const int thumbMaxWidth = 500;
+            const int thumbMaxHeight = 200;
 
             var contentType = GetContentType(fileItem.File);
+
             if (contentType.StartsWith("image"))
             {
                 if (System.IO.File.Exists(thumbFile)) return PhysicalFile(thumbFile, "image/jpeg", true);
 
-                using var bmp = SKBitmap.Decode(Path.Combine(StorageLocation, fileItem.File));
+                using var bmp = SKBitmap.Decode(sourceFile);
 
-                const int thumbHeight = 200;
-                const int thumbMaxWidth = 500;
                 var aspectRatio = (float)bmp.Width / bmp.Height;
                 int width, height;
-                if (aspectRatio > thumbMaxWidth / thumbHeight)
+                if (aspectRatio > thumbMaxWidth / thumbMaxHeight)
                 {
                     width = thumbMaxWidth;
                     height = (int)(thumbMaxWidth / aspectRatio);
                 }
                 else
                 {
-                    width = (int)(thumbHeight * aspectRatio);
-                    height = thumbHeight;
+                    width = (int)(thumbMaxHeight * aspectRatio);
+                    height = thumbMaxHeight;
                 }
 
                 Directory.CreateDirectory(thumbDir);
@@ -123,6 +127,21 @@ namespace MadoMagiArchive.Controllers
 
                 return PhysicalFile(thumbFile, "image/jpeg", true);
             }
+
+            if (contentType.StartsWith("video"))
+            {
+                if (System.IO.File.Exists(thumbFile)) return PhysicalFile(thumbFile, "image/jpeg", true);
+
+                Directory.CreateDirectory(thumbDir);
+                var result = await Media.CreateVideoThumb(sourceFile, thumbFile, thumbMaxWidth, thumbMaxHeight);
+
+                return result == null
+                    ? Problem("Could not start ffmpeg")
+                    : result == 0
+                        ? PhysicalFile(thumbFile, "image/jpeg", true)
+                        : Problem($"FFmpeg exited unexpectedly with code {result}");
+            }
+
             else return NoContent();
         }
 
@@ -153,16 +172,17 @@ namespace MadoMagiArchive.Controllers
                     var type = GetContentType(file.FileName);
                     if (type == "application/octet-stream") return new ApiResponse<IEnumerable<int>>(-1, "Uploaded file type not supported");
 
-                    var path = Path.Combine(UploadDirectory, Guid.NewGuid().ToString() + Path.GetExtension(file.FileName));
+                    var filePath = Path.Combine(UploadDirectory, Guid.NewGuid().ToString() + Path.GetExtension(file.FileName));
+                    var fileFullPath = Path.Combine(StorageLocation, filePath);
 
                     Directory.CreateDirectory(Path.Combine(StorageLocation, UploadDirectory));
 
-                    using var stream = System.IO.File.Create(Path.Combine(StorageLocation, path));
+                    using var stream = System.IO.File.Create(fileFullPath);
                     await file.CopyToAsync(stream);
 
                     var fileEntity = await dbContext.Files.AddAsync(new()
                     {
-                        File = path,
+                        File = filePath,
                         Size = file.Length,
                         Owner = userContext.Id,
                         Type = type,
@@ -177,6 +197,18 @@ namespace MadoMagiArchive.Controllers
                         {
                             fileEntity.Entity.Width = skImage.Width;
                             fileEntity.Entity.Height = skImage.Height;
+                        }
+                    }
+
+                    if (type.StartsWith("video"))
+                    {
+                        await stream.DisposeAsync();
+                        var video = await Media.GetMediaInfo(fileFullPath);
+                        if (video != null)
+                        {
+                            fileEntity.Entity.Width = video.Width;
+                            fileEntity.Entity.Height = video.Height;
+                            fileEntity.Entity.Duration = video.Duration;
                         }
                     }
 

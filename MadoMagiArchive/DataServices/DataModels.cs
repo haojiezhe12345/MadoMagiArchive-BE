@@ -16,6 +16,7 @@ namespace MadoMagiArchive.DataServices.DataModels
         {
             _permission = new Permission(1, 20, 100);
         }
+
         public int Id { get; set; }
         public string? Type { get; set; }
         public bool? R18 { get; set; }
@@ -24,7 +25,8 @@ namespace MadoMagiArchive.DataServices.DataModels
         public string? Source { get; set; }
         public int? Width { get; set; }
         public int? Height { get; set; }
-        public TimeSpan? Duration { get; set; }
+        public double? Duration { get; set; }
+
         public required string File { get; set; }
         public required long Size { get; set; }
 

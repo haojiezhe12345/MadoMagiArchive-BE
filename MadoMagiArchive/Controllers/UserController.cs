@@ -8,15 +8,15 @@ namespace MadoMagiArchive.Controllers
     [Route("users")]
     [ApiController]
     [UseTablePermission(nameof(CoreDbContext.Users))]
-    public class UserController(CoreDbContext dbContext, UserContext userContext, UserService userService) : ControllerBase
+    public class UserController(CoreDbContext coreDb, UserContext userContext, UserService userService) : ControllerBase
     {
-        private async Task<bool> UserExists(int id) => await dbContext.Users.AsNoTracking().AnyAsync(e => e.Id == id);
+        private async Task<bool> UserExists(int id) => await coreDb.Users.AsNoTracking().AnyAsync(e => e.Id == id);
 
         [HttpGet]
         [RequireTableReadPermission]
         public async Task<ActionResult<IEnumerable<UserItem>>> GetUsers()
         {
-            return await dbContext.Users.ToListAsync();
+            return await coreDb.Users.ToListAsync();
         }
 
         [HttpGet("self")]
@@ -47,8 +47,8 @@ namespace MadoMagiArchive.Controllers
             }
 
             user.Owner = userContext.Id;
-            await dbContext.Users.AddAsync(user);
-            await dbContext.SaveChangesAsync();
+            await coreDb.Users.AddAsync(user);
+            await coreDb.SaveChangesAsync();
 
             return ApiResponse.Success;
         }
@@ -66,7 +66,7 @@ namespace MadoMagiArchive.Controllers
                 }
             }
 
-            var entities = await dbContext.Users
+            var entities = await coreDb.Users
                 .Where(x => update.Ids.Contains(x.Id))
                 .Include(x => x.Settings)
                 .ToListAsync();
@@ -106,7 +106,7 @@ namespace MadoMagiArchive.Controllers
                 updatedIds.Add(entity.Id);
             }
 
-            await dbContext.SaveChangesAsync();
+            await coreDb.SaveChangesAsync();
 
             return update.Ids.Count == updatedIds.Count
                 ? ApiResponse<IEnumerable<int>>.Success()
@@ -117,20 +117,20 @@ namespace MadoMagiArchive.Controllers
         [RequireTableDeletePermission]
         public async Task<ActionResult<ApiResponse>> DeleteUser(int id)
         {
-            var user = await dbContext.Users.FindAsync(id);
+            var user = await coreDb.Users.FindAsync(id);
 
             if (user == null) return ApiRawResponse.NotFound;
             if (!userContext.CanDelete(user)) return ApiRawResponse.NoDeletePermission;
 
-            dbContext.Users.Remove(user);
-            await dbContext.SaveChangesAsync();
+            coreDb.Users.Remove(user);
+            await coreDb.SaveChangesAsync();
 
             return ApiResponse.Success;
         }
 
         [HttpGet("anonymous")]
         [RequireTableReadPermission]
-        public async Task<ActionResult<UserItem>> GetAnonymousUser() => await dbContext.Users.FindAsync(UserService.AnonymousUserId) ?? new() { Id = UserService.AnonymousUserId };
+        public async Task<ActionResult<UserItem>> GetAnonymousUser() => await coreDb.Users.FindAsync(UserService.AnonymousUserId) ?? new() { Id = UserService.AnonymousUserId };
 
         [HttpPut("anonymous")]
         [RequireTableWritePermission]

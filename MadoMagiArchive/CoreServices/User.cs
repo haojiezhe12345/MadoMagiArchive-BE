@@ -20,7 +20,7 @@ namespace MadoMagiArchive.CoreServices
         }
     }
 
-    public class UserService(IHttpClientFactory httpClientFactory, IMemoryCache memoryCache, IConfiguration configuration, CoreDbContext dbContext, ILogger<UserService> logger)
+    public class UserService(IHttpClientFactory httpClientFactory, IMemoryCache memoryCache, IConfiguration configuration, CoreDbContext coreDb, ILogger<UserService> logger)
     {
         public Uri MadoHomuAPI_BaseUrl = new UriBuilder(configuration["MadoHomuAPI_BaseUrl"] ?? "localhost").Uri;
 
@@ -68,12 +68,12 @@ namespace MadoMagiArchive.CoreServices
 
         public async Task<UserItem?> GetUserById(int id)
         {
-            return await dbContext.Users.SingleOrDefaultAsync(u => u.Id == id);
+            return await coreDb.Users.SingleOrDefaultAsync(u => u.Id == id);
         }
 
         public async Task<UserItem?> GetFullUserById(int id)
         {
-            return await dbContext.Users.Include(x => x.Settings).SingleOrDefaultAsync(u => u.Id == id);
+            return await coreDb.Users.Include(x => x.Settings).SingleOrDefaultAsync(u => u.Id == id);
         }
 
         public async Task<UserItem> GetUserByToken(string? token)

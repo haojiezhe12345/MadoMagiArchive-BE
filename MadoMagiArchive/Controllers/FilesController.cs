@@ -13,7 +13,7 @@ namespace MadoMagiArchive.Controllers
     [Route("[controller]")]
     [ApiController]
     [UseTablePermission(nameof(DataDbContext.Files))]
-    public class FilesController(DataDbContext dbContext, UserContext userContext, StorageService storage) : ControllerBase
+    public class FilesController(DataDbContext dataDb, UserContext userContext, StorageService storage) : ControllerBase
     {
         private string StorageLocation => storage.StorageLocation;
         private string UploadDirectory => storage.UploadDirectory;
@@ -30,7 +30,7 @@ namespace MadoMagiArchive.Controllers
         [RequireTableReadPermission]
         public async Task<ActionResult<IEnumerable<FileItem>>> GetFiles(int? fromId, DateTime? fromTime, string? type, int count = 30)
         {
-            var query = dbContext.Files.Where(x => userContext.ReadLevel >= (x.Permission & 0x00ff0000) / 0x10000 || userContext.Id == x.Owner);
+            var query = dataDb.Files.Where(x => userContext.ReadLevel >= (x.Permission & 0x00ff0000) / 0x10000 || userContext.Id == x.Owner);
 
             if (fromId != null) query = query.Where(x => x.Id <= fromId);
             if (fromTime != null) query = query.Where(x => x.DateCreated <= fromTime);
@@ -44,7 +44,7 @@ namespace MadoMagiArchive.Controllers
         [RequireTableReadPermission]
         public async Task<IActionResult> GetFileContent(int id, string? filename)
         {
-            var fileItem = await dbContext.Files.FindAsync(id);
+            var fileItem = await dataDb.Files.FindAsync(id);
 
             if (fileItem == null) return ApiRawResponse.NotFound;
             if (!userContext.CanRead(fileItem)) return ApiRawResponse.NoReadPermission;
@@ -81,7 +81,7 @@ namespace MadoMagiArchive.Controllers
         [RequireTableReadPermission]
         public async Task<IActionResult> GetFileThumb(int id)
         {
-            var fileItem = await dbContext.Files.FindAsync(id);
+            var fileItem = await dataDb.Files.FindAsync(id);
 
             if (fileItem == null) return ApiRawResponse.NotFound;
             if (!userContext.CanRead(fileItem)) return ApiRawResponse.NoReadPermission;
@@ -145,7 +145,7 @@ namespace MadoMagiArchive.Controllers
         [RequireTableReadPermission]
         public async Task<ActionResult<FileItem>> GetFileDetail(int id)
         {
-            var file = await dbContext.Files
+            var file = await dataDb.Files
                 .Include(x => x.Tags)
                 .ThenInclude(x => x.Names)
                 .SingleOrDefaultAsync(x => x.Id == id);
@@ -176,7 +176,7 @@ namespace MadoMagiArchive.Controllers
                     using var stream = System.IO.File.Create(fileFullPath);
                     await file.CopyToAsync(stream);
 
-                    var fileEntity = await dbContext.Files.AddAsync(new()
+                    var fileEntity = await dataDb.Files.AddAsync(new()
                     {
                         File = filePath,
                         Size = file.Length,
@@ -208,7 +208,7 @@ namespace MadoMagiArchive.Controllers
                         }
                     }
 
-                    await dbContext.SaveChangesAsync();
+                    await dataDb.SaveChangesAsync();
 
                     ids.Add(fileEntity.Entity.Id);
                 }
@@ -221,7 +221,7 @@ namespace MadoMagiArchive.Controllers
         [RequireTableWritePermission]
         public async Task<ActionResult<ApiResponse<IEnumerable<int>>>> PutFileDetail(FilesUpdateDTO update)
         {
-            var entities = await dbContext.Files
+            var entities = await dataDb.Files
                   .Where(x => update.Ids.Contains(x.Id))
                   .Include(x => x.Tags)
                   .ToListAsync();
@@ -251,7 +251,7 @@ namespace MadoMagiArchive.Controllers
 
                 if (update.TagsAdded != null)
                 {
-                    var newTags = await dbContext.Tags
+                    var newTags = await dataDb.Tags
                         .Where(t => update.TagsAdded.Contains(t.Id))
                         .ToListAsync();
                     entity.Tags.AddRange(newTags);
@@ -270,7 +270,7 @@ namespace MadoMagiArchive.Controllers
                 updatedIds.Add(entity.Id);
             }
 
-            await dbContext.SaveChangesAsync();
+            await dataDb.SaveChangesAsync();
 
             return update.Ids.Count == updatedIds.Count
                 ? ApiResponse<IEnumerable<int>>.Success()
@@ -281,13 +281,13 @@ namespace MadoMagiArchive.Controllers
         [RequireTableDeletePermission]
         public async Task<ActionResult<ApiResponse>> DeleteItem(int id)
         {
-            var item = await dbContext.Files.FindAsync(id);
+            var item = await dataDb.Files.FindAsync(id);
 
             if (item == null) return ApiRawResponse.NotFound;
             if (!userContext.CanDelete(item)) return ApiRawResponse.NoDeletePermission;
 
-            dbContext.Files.Remove(item);
-            await dbContext.SaveChangesAsync();
+            dataDb.Files.Remove(item);
+            await dataDb.SaveChangesAsync();
 
             return ApiResponse.Success;
         }

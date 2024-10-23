@@ -25,22 +25,22 @@ namespace MadoMagiArchive.CoreServices
         }
     }
 
-    public class CoreService(CoreDbContext dbContext)
+    public class CoreService(CoreDbContext coreDb)
     {
         public async Task<string?> GetSetting(string name)
         {
-            return (await dbContext.Settings.SingleOrDefaultAsync(x => x.Name == name))?.Value;
+            return (await coreDb.Settings.SingleOrDefaultAsync(x => x.Name == name))?.Value;
         }
 
         public async Task SetSetting(string name, string? value)
         {
-            var oldRow = await dbContext.Settings.SingleOrDefaultAsync(x => x.Name == name);
+            var oldRow = await coreDb.Settings.SingleOrDefaultAsync(x => x.Name == name);
 
             if (value == null)
             {
                 if (oldRow != null)
                 {
-                    dbContext.Settings.Remove(oldRow);
+                    coreDb.Settings.Remove(oldRow);
                 }
             }
             else
@@ -48,11 +48,11 @@ namespace MadoMagiArchive.CoreServices
                 if (oldRow != null)
                 {
                     oldRow.Value = value;
-                    dbContext.Settings.Update(oldRow);
+                    coreDb.Settings.Update(oldRow);
                 }
                 else
                 {
-                    await dbContext.Settings.AddAsync(new()
+                    await coreDb.Settings.AddAsync(new()
                     {
                         Name = name,
                         Value = value
@@ -60,35 +60,35 @@ namespace MadoMagiArchive.CoreServices
                 }
             }
 
-            await dbContext.SaveChangesAsync();
+            await coreDb.SaveChangesAsync();
         }
     }
     public static class CoreDbContextExtensions
     {
-        public static void SeedData(this CoreDbContext context)
+        public static void SeedData(this CoreDbContext coreDb)
         {
             foreach (var table in new string[] {
                 nameof(DataDbContext.Files),
                 nameof(DataDbContext.Tags),
                 nameof(DataDbContext.TagNames),
             })
-                if (!context.TablePermissions.Any(x => x.Table == table))
-                    context.TablePermissions.Add(new()
+                if (!coreDb.TablePermissions.Any(x => x.Table == table))
+                    coreDb.TablePermissions.Add(new()
                     {
                         Table = table,
                         Permission = 0x00010101,
                     });
 
-            if (!context.Users.Any())
+            if (!coreDb.Users.Any())
             {
-                context.Users.Add(new()
+                coreDb.Users.Add(new()
                 {
                     Id = 1,
                     AccessLevel = 0x00ffffff,
                     Permission = 0x00ffffff
                 });
             }
-            context.SaveChanges();
+            coreDb.SaveChanges();
         }
     }
 

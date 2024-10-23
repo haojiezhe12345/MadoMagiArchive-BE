@@ -33,11 +33,11 @@ namespace MadoMagiArchive.DataServices
 
     public static class DataDbContextExtensions
     {
-        public static void SeedData(this DataDbContext context)
+        public static void SeedData(this DataDbContext dataDb)
         {
-            if (!context.Tags.Any())
+            if (!dataDb.Tags.Any())
             {
-                context.Tags.AddRange([
+                dataDb.Tags.AddRange([
                     new() {
                         Type = "character",
                         Description = "Kaname Madoka 小圆 鹿目圆香 甜瓜",
@@ -100,7 +100,7 @@ namespace MadoMagiArchive.DataServices
                     },
                 ]);
             }
-            context.SaveChanges();
+            dataDb.SaveChanges();
         }
     }
 }

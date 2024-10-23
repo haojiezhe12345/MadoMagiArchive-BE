@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-
-namespace MadoMagiArchive.CoreServices.Api
+namespace MadoMagiArchive.CoreServices
 {
     public class ApiResponse<T>(int code, string message, T? data = default)
     {

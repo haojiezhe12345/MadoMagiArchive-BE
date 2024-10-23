@@ -1,10 +1,9 @@
 ﻿using Microsoft.OpenApi.Models;
 using Microsoft.EntityFrameworkCore;
 
-using MadoMagiArchive.CoreServices.Core;
-using MadoMagiArchive.CoreServices.User;
-using MadoMagiArchive.CoreServices.Permission;
-using MadoMagiArchive.DataServices.Data;
+using MadoMagiArchive.CoreServices;
+using MadoMagiArchive.DataServices;
+using MadoMagiArchive.FileServices;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -42,6 +41,7 @@ builder.Services.AddSwaggerGen(options =>
 
     builder.Services.AddDbContext<DataDbContext>();
 
+    builder.Services.AddSingleton<StorageService>();
     Directory.CreateDirectory("Databases");
 }
 

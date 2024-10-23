@@ -1,9 +1,4 @@
-﻿using MadoMagiArchive.CoreServices.User;
-using MadoMagiArchive.CoreServices.Api;
-using MadoMagiArchive.CoreServices.CoreModels;
-
-
-namespace MadoMagiArchive.CoreServices.Permission
+﻿namespace MadoMagiArchive.CoreServices
 {
     public static class PermissionExtensions
     {

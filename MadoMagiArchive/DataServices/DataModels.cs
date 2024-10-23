@@ -2,12 +2,9 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using MadoMagiArchive.CoreServices;
 
-using MadoMagiArchive.CoreServices.CoreModels;
-using MadoMagiArchive.CoreServices.Permission;
-
-
-namespace MadoMagiArchive.DataServices.DataModels
+namespace MadoMagiArchive.DataServices
 {
     [Index(nameof(File), IsUnique = true)]
     public class FileItem : BasePermissionItem

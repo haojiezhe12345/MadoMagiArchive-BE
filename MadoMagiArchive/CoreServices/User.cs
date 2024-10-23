@@ -3,12 +3,7 @@ using Microsoft.Extensions.Caching.Memory;
 using System.Text.Json;
 using System.Net;
 
-using MadoMagiArchive.CoreServices.CoreModels;
-using MadoMagiArchive.CoreServices.Core;
-using MadoMagiArchive.CoreServices.Permission;
-
-
-namespace MadoMagiArchive.CoreServices.User
+namespace MadoMagiArchive.CoreServices
 {
     public class UserContext(CoreDbContext coreDb)
     {

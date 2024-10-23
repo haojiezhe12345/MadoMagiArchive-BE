@@ -1,8 +1,4 @@
-﻿using MadoMagiArchive.CoreServices.CoreModels;
-using MadoMagiArchive.CoreServices.Core;
-
-
-namespace MadoMagiArchive.CoreServices.Logging
+﻿namespace MadoMagiArchive.CoreServices
 {
     public class LoggingService(CoreDbContext dbContext)
     {

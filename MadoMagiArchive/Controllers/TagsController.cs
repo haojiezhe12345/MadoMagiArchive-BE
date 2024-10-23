@@ -1,11 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
-using MadoMagiArchive.DataServices.Data;
-using MadoMagiArchive.DataServices.DataModels;
-using MadoMagiArchive.CoreServices.Permission;
-using MadoMagiArchive.CoreServices.User;
-using MadoMagiArchive.CoreServices.Api;
+using MadoMagiArchive.CoreServices;
+using MadoMagiArchive.DataServices;
 
 
 namespace MadoMagiArchive.Controllers

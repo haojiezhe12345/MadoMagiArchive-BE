@@ -3,13 +3,9 @@ using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Http.Headers;
 using SkiaSharp;
-
-using MadoMagiArchive.DataServices.Data;
-using MadoMagiArchive.DataServices.DataModels;
-using MadoMagiArchive.CoreServices.Api;
-using MadoMagiArchive.CoreServices.User;
-using MadoMagiArchive.CoreServices.Permission;
-using MadoMagiArchive.FileServices.Media;
+using MadoMagiArchive.CoreServices;
+using MadoMagiArchive.DataServices;
+using MadoMagiArchive.FileServices;
 
 
 namespace MadoMagiArchive.Controllers
@@ -17,10 +13,10 @@ namespace MadoMagiArchive.Controllers
     [Route("[controller]")]
     [ApiController]
     [UseTablePermission(nameof(DataDbContext.Files))]
-    public class FilesController(DataDbContext dbContext, UserContext userContext, IConfiguration configuration) : ControllerBase
+    public class FilesController(DataDbContext dbContext, UserContext userContext, StorageService storage) : ControllerBase
     {
-        public string StorageLocation => Path.GetFullPath(configuration["StorageLocation"] ?? "Files");
-        public string UploadDirectory => configuration["UploadDirectory"] ?? "";
+        private string StorageLocation => storage.StorageLocation;
+        private string UploadDirectory => storage.UploadDirectory;
 
         public static string GetContentType(string path)
         {

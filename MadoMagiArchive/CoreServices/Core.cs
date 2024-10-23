@@ -1,10 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using MadoMagiArchive.DataServices;
 
-using MadoMagiArchive.CoreServices.CoreModels;
-using MadoMagiArchive.DataServices.Data;
-
-
-namespace MadoMagiArchive.CoreServices.Core
+namespace MadoMagiArchive.CoreServices
 {
     public class CoreDbContext : DbContext
     {

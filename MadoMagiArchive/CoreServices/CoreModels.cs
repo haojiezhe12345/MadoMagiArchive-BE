@@ -2,8 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
-
-namespace MadoMagiArchive.CoreServices.CoreModels
+namespace MadoMagiArchive.CoreServices
 {
     public class BasePermissionItem
     {
@@ -11,7 +10,7 @@ namespace MadoMagiArchive.CoreServices.CoreModels
         public uint Permission
         {
             get => _permission;
-            set => _permission = new Permission.Permission(value);
+            set => _permission = new Permission(value);
         }
         public int? Owner { get; set; }
     }
@@ -24,7 +23,7 @@ namespace MadoMagiArchive.CoreServices.CoreModels
         public uint AccessLevel
         {
             get => _accessLevel;
-            set => _accessLevel = new Permission.Permission(value);
+            set => _accessLevel = new Permission(value);
         }
 
         public List<UserSetting> Settings { get; set; } = [];

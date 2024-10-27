@@ -10,6 +10,7 @@ namespace MadoMagiArchive.FileServices
     {
         Task IsScanning(bool isScanning);
         Task ScanProgress(int added, int total, string filename);
+        Task Message(string message);
         Task Error(string message);
     }
 
@@ -70,7 +71,7 @@ namespace MadoMagiArchive.FileServices
             if (cts != null)
             {
                 await cts.CancelAsync();
-                logger.LogInformation("Trying to cancel the scan");
+                LogInfo("Trying to cancel the scan");
             }
         }
 
@@ -78,7 +79,7 @@ namespace MadoMagiArchive.FileServices
         {
             try
             {
-                logger.LogInformation("Scan started");
+                LogInfo("Scan started");
 
                 var stopwatch = new Stopwatch();
                 stopwatch.Start();
@@ -116,8 +117,7 @@ namespace MadoMagiArchive.FileServices
                     }
                     catch (Exception ex)
                     {
-                        logger.LogError(ex, "An error occured while enumerating files");
-                        _ = hub.Clients.All.Error(ex.ToString());
+                        LogError(ex, "An error occured while enumerating files");
                     }
                     finally
                     {
@@ -178,8 +178,7 @@ namespace MadoMagiArchive.FileServices
                                         }
                                         catch (Exception ex)
                                         {
-                                            logger.LogError(ex, "An error occured while adding a file to database");
-                                            _ = hub.Clients.All.Error(ex.ToString());
+                                            LogError(ex, "An error occured while adding a file to database");
                                         }
                                         finally
                                         {
@@ -202,8 +201,7 @@ namespace MadoMagiArchive.FileServices
                     }
                     catch (Exception ex)
                     {
-                        logger.LogError(ex, "An error occured while adding files to database");
-                        _ = hub.Clients.All.Error(ex.ToString());
+                        LogError(ex, "An error occured while adding files to database");
                     }
                     finally
                     {
@@ -221,7 +219,7 @@ namespace MadoMagiArchive.FileServices
                             if (fileAdding != lastPrintFile)
                             {
                                 logger.LogInformation($"{added} / {total} - {fileAdding}");
-                                _ = hub.Clients.All.ScanProgress(added, total, fileAdding);
+                                hub.Clients.All.ScanProgress(added, total, fileAdding);
                                 lastPrintFile = fileAdding;
                             }
                             Thread.Sleep(10);
@@ -229,33 +227,38 @@ namespace MadoMagiArchive.FileServices
                     }
                     catch (Exception ex)
                     {
-                        logger.LogError(ex, "An error occured while displaying scan progress");
-                        _ = hub.Clients.All.Error(ex.ToString());
+                        LogError(ex, "An error occured while displaying scan progress");
                     }
                 });
 
                 Task.WaitAll(fileEnumTask, fileAddTask, progressPrintTask);
 
                 stopwatch.Stop();
-                logger.LogInformation($"Scan exited gracefully after {stopwatch.Elapsed.TotalSeconds}s");
+                LogInfo($"Scan exited gracefully after {stopwatch.Elapsed.TotalSeconds}s");
             }
 
             catch (Exception ex)
             {
-                logger.LogError(ex, "Scan exited with an error");
-                _ = hub.Clients.All.Error(ex.ToString());
+                LogError(ex, "Scan exited with an error");
             }
 
             finally
             {
                 scanning = false;
-                _ = hub.Clients.All.IsScanning(scanning);
+                hub.Clients.All.IsScanning(scanning);
             }
         }
 
-        private async Task SaveFileToDatabaseAsync(string fileName)
+        private void LogError(Exception ex, string message)
         {
+            logger.LogError(ex, message);
+            hub.Clients.All.Error(ex.ToString());
+        }
 
+        private void LogInfo(string message)
+        {
+            logger.LogInformation(message);
+            hub.Clients.All.Message(message);
         }
     }
 }

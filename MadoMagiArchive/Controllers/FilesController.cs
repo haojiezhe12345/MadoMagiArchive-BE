@@ -16,6 +16,7 @@ namespace MadoMagiArchive.Controllers
     {
         private string StorageLocation => storage.StorageLocation;
         private string UploadDirectory => storage.UploadDirectory;
+        private string ThumbDir => storage.ThumbDir;
 
         [HttpGet]
         [RequireTableReadPermission]
@@ -77,8 +78,7 @@ namespace MadoMagiArchive.Controllers
             if (fileItem == null) return ApiRawResponse.NotFound;
             if (!userContext.CanRead(fileItem)) return ApiRawResponse.NoReadPermission;
 
-            var thumbDir = Path.Combine(StorageLocation, UploadDirectory, "thumbs");
-            var thumbFile = Path.Combine(thumbDir, $"tmb_{id}.jpg");
+            var thumbFile = Path.Combine(ThumbDir, $"tmb_{id}.jpg");
             var sourceFile = Path.Combine(StorageLocation, fileItem.File);
 
             const int thumbMaxWidth = 500;
@@ -105,7 +105,7 @@ namespace MadoMagiArchive.Controllers
                     height = thumbMaxHeight;
                 }
 
-                Directory.CreateDirectory(thumbDir);
+                Directory.CreateDirectory(ThumbDir);
                 using var thumbStream = System.IO.File.Create(thumbFile);
 
                 bmp.Resize(new SKImageInfo(width, height), SKFilterQuality.Medium)
@@ -119,7 +119,7 @@ namespace MadoMagiArchive.Controllers
             {
                 if (System.IO.File.Exists(thumbFile)) return PhysicalFile(thumbFile, "image/jpeg", true);
 
-                Directory.CreateDirectory(thumbDir);
+                Directory.CreateDirectory(ThumbDir);
                 var result = await FFmpeg.CreateVideoThumb(sourceFile, thumbFile, thumbMaxWidth, thumbMaxHeight);
 
                 return result == null
@@ -267,6 +267,19 @@ namespace MadoMagiArchive.Controllers
 
             dataDb.Files.Remove(item);
             await dataDb.SaveChangesAsync();
+
+            return ApiResponse.Success;
+        }
+
+        [HttpDelete("thumbs")]
+        public async Task<ActionResult<ApiResponse>> DeleteThumbs()
+        {
+            if (userContext.ReadLevel < 1) return ApiRawResponse.Forbidden;
+
+            await Task.Run(() =>
+            {
+                foreach (FileInfo file in new DirectoryInfo(ThumbDir).GetFiles()) file.Delete();
+            });
 
             return ApiResponse.Success;
         }

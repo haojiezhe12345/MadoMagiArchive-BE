@@ -1,10 +1,13 @@
 ﻿using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
+using SkiaSharp;
+using MadoMagiArchive.DataServices;
 
 namespace MadoMagiArchive.FileServices
 {
-    public class MediaInfo
+    public partial class MediaInfo
     {
         public class StreamInfo
         {
@@ -40,15 +43,22 @@ namespace MadoMagiArchive.FileServices
                     return Double.Parse(stream.duration);
                 else if (stream?.tags?.DURATION != null)
                 {
-                    var duration = TimeSpan.ParseExact(stream.tags.DURATION, "g", null);
+                    var duration = TimeSpan.ParseExact(DurationDigitTrimmer.Trim(stream.tags.DURATION), "g", null);
                     return duration.TotalSeconds;
                 }
                 else return null;
             }
         }
+
+        public static partial class DurationDigitTrimmer
+        {
+            [GeneratedRegex(@"(\.\d{7})\d+")]
+            private static partial Regex Regex();
+            public static string Trim(string duration) => Regex().Replace(duration, "$1");
+        }
     }
 
-    public class Media
+    public class FFmpeg
     {
         public static async Task<MediaInfo?> GetMediaInfo(string file)
         {
@@ -88,6 +98,44 @@ namespace MadoMagiArchive.FileServices
             catch
             {
                 return null;
+            }
+        }
+    }
+
+    public static class FileItemMediaExtensions
+    {
+        public static bool IsImage(this FileItem fileItem) => fileItem.Type?.StartsWith("image") ?? false;
+        public static bool IsVideo(this FileItem fileItem) => fileItem.Type?.StartsWith("video") ?? false;
+
+        public static void AddImageInfo(this FileItem fileItem, FileStream stream)
+        {
+            stream.Seek(0, SeekOrigin.Begin);
+            using var bitmap = SKBitmap.Decode(stream);
+            if (bitmap != null)
+            {
+                fileItem.Width = bitmap.Width;
+                fileItem.Height = bitmap.Height;
+            }
+        }
+
+        public static async Task AddImageInfo(this FileItem fileItem, string filePath)
+        {
+            var imageInfo = await FFmpeg.GetMediaInfo(filePath);
+            if (imageInfo != null)
+            {
+                fileItem.Width = imageInfo.Width;
+                fileItem.Height = imageInfo.Height;
+            }
+        }
+
+        public static async Task AddVideoInfo(this FileItem fileItem, string filePath)
+        {
+            var videoInfo = await FFmpeg.GetMediaInfo(filePath);
+            if (videoInfo != null)
+            {
+                fileItem.Width = videoInfo.Width;
+                fileItem.Height = videoInfo.Height;
+                fileItem.Duration = videoInfo.Duration;
             }
         }
     }

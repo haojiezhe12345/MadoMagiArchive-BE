@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Http.Headers;
 using SkiaSharp;
@@ -17,14 +16,6 @@ namespace MadoMagiArchive.Controllers
     {
         private string StorageLocation => storage.StorageLocation;
         private string UploadDirectory => storage.UploadDirectory;
-
-        public static string GetContentType(string path)
-        {
-            var provider = new FileExtensionContentTypeProvider();
-            if (!provider.TryGetContentType(path, out string? contentType))
-                contentType = "application/octet-stream";
-            return contentType;
-        }
 
         [HttpGet]
         [RequireTableReadPermission]
@@ -49,16 +40,16 @@ namespace MadoMagiArchive.Controllers
             if (fileItem == null) return ApiRawResponse.NotFound;
             if (!userContext.CanRead(fileItem)) return ApiRawResponse.NoReadPermission;
 
-            if (filename == null) return Redirect($"{id}/{Uri.EscapeDataString(fileItem.File)}");
+            //if (filename == null) return Redirect($"{id}/{Uri.EscapeDataString(Utils.NormalizeDownloadFilename(fileItem.File))}");
 
             var file = Path.Combine(StorageLocation, fileItem.File);
 
-            string? rangeHeader = Request.Headers["Range"];
+            string? rangeHeader = Request.Headers.Range;
             var rangeValue = !string.IsNullOrEmpty(rangeHeader) ? RangeHeaderValue.Parse(rangeHeader) : null;
 
             if (rangeValue == null)
             {
-                return PhysicalFile(file, GetContentType(file), true);
+                return PhysicalFile(file, Utils.GetContentType(file), true);
             }
             else
             {
@@ -73,7 +64,7 @@ namespace MadoMagiArchive.Controllers
                 Response.StatusCode = 206;
                 Response.Headers.ContentRange = $"bytes {from}-{to}/{fileSize}";
 
-                return new FileStreamResult(stream, GetContentType(file)) { EnableRangeProcessing = true };
+                return new FileStreamResult(stream, Utils.GetContentType(file)) { EnableRangeProcessing = true };
             }
         }
 
@@ -93,7 +84,7 @@ namespace MadoMagiArchive.Controllers
             const int thumbMaxWidth = 500;
             const int thumbMaxHeight = 200;
 
-            var contentType = GetContentType(fileItem.File);
+            var contentType = Utils.GetContentType(fileItem.File);
 
             if (contentType.StartsWith("image"))
             {
@@ -129,7 +120,7 @@ namespace MadoMagiArchive.Controllers
                 if (System.IO.File.Exists(thumbFile)) return PhysicalFile(thumbFile, "image/jpeg", true);
 
                 Directory.CreateDirectory(thumbDir);
-                var result = await Media.CreateVideoThumb(sourceFile, thumbFile, thumbMaxWidth, thumbMaxHeight);
+                var result = await FFmpeg.CreateVideoThumb(sourceFile, thumbFile, thumbMaxWidth, thumbMaxHeight);
 
                 return result == null
                     ? Problem("Could not start ffmpeg")
@@ -165,7 +156,7 @@ namespace MadoMagiArchive.Controllers
             {
                 if (file.Length > 0)
                 {
-                    var type = GetContentType(file.FileName);
+                    var type = Utils.GetContentType(file.FileName);
                     if (type == "application/octet-stream") return new ApiResponse<IEnumerable<int>>(-1, "Uploaded file type not supported");
 
                     var filePath = Path.Combine(UploadDirectory, Guid.NewGuid().ToString() + Path.GetExtension(file.FileName));
@@ -185,27 +176,15 @@ namespace MadoMagiArchive.Controllers
                         //Permission = 0x00646464,
                     });
 
-                    if (type.StartsWith("image"))
+                    if (fileEntity.Entity.IsImage())
                     {
-                        stream.Seek(0, SeekOrigin.Begin);
-                        using var skImage = SKBitmap.Decode(stream);
-                        if (skImage != null)
-                        {
-                            fileEntity.Entity.Width = skImage.Width;
-                            fileEntity.Entity.Height = skImage.Height;
-                        }
+                        fileEntity.Entity.AddImageInfo(stream);
                     }
 
-                    if (type.StartsWith("video"))
+                    if (fileEntity.Entity.IsVideo())
                     {
                         await stream.DisposeAsync();
-                        var video = await Media.GetMediaInfo(fileFullPath);
-                        if (video != null)
-                        {
-                            fileEntity.Entity.Width = video.Width;
-                            fileEntity.Entity.Height = video.Height;
-                            fileEntity.Entity.Duration = video.Duration;
-                        }
+                        await fileEntity.Entity.AddVideoInfo(fileFullPath);
                     }
 
                     await dataDb.SaveChangesAsync();

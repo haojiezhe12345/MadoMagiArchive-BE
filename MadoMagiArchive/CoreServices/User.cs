@@ -60,7 +60,7 @@ namespace MadoMagiArchive.CoreServices
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(1000, ex, $"Error occurred while sending request to {requestUrl}");
+                    logger.LogError(ex, $"Error occurred while sending request to {requestUrl}");
                     return AnonymousUserId;
                 }
             }

@@ -33,6 +33,7 @@ builder.Services.AddSwaggerGen(options =>
 {
     builder.Services.AddHttpClient();
     builder.Services.AddMemoryCache();
+    builder.Services.AddSignalR();
 
     builder.Services.AddDbContext<CoreDbContext>();
     builder.Services.AddScoped<CoreService>();
@@ -42,6 +43,8 @@ builder.Services.AddSwaggerGen(options =>
     builder.Services.AddDbContext<DataDbContext>();
 
     builder.Services.AddSingleton<StorageService>();
+    builder.Services.AddSingleton<FileScanService>();
+
     Directory.CreateDirectory("Databases");
 }
 
@@ -75,6 +78,8 @@ if (app.Environment.IsDevelopment())
 
     app.UseMiddleware<UserAuthMiddleware>();
     app.UseMiddleware<PermissionCheckMiddleware>();
+
+    app.MapHub<FileScanHub>("/files/scan");
 }
 
 

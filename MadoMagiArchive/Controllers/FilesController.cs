@@ -174,9 +174,10 @@ namespace MadoMagiArchive.Controllers
                     {
                         File = filePath,
                         Size = file.Length,
-                        Owner = userContext.Id,
                         Type = type,
                         //Permission = 0x00646464,
+                        Owner = userContext.Id,
+                        Title = Path.GetFileNameWithoutExtension(file.FileName),
                     });
 
                     if (fileEntity.Entity.IsImage())

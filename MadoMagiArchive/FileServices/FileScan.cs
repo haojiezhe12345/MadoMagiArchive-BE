@@ -158,9 +158,9 @@ namespace MadoMagiArchive.FileServices
                                             {
                                                 File = file,
                                                 Size = new FileInfo(fullPath).Length,
-                                                Owner = -100,
                                                 Type = Utils.GetContentType(fullPath),
                                                 Permission = 0x00646464,
+                                                Owner = UserService.SystemUserId,
                                                 Title = Path.GetFileNameWithoutExtension(fullPath),
                                                 DateCreated = File.GetCreationTime(fullPath),
                                                 DateModified = File.GetLastWriteTime(fullPath),

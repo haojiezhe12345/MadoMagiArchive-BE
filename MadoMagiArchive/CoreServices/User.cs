@@ -25,10 +25,11 @@ namespace MadoMagiArchive.CoreServices
         public Uri MadoHomuAPI_BaseUrl = new UriBuilder(configuration["MadoHomuAPI_BaseUrl"] ?? "localhost").Uri;
 
         public const int AnonymousUserId = -1;
+        public const int SystemUserId = -100;
 
         public async Task<int> GetUserIdByToken(string? token)
         {
-            if (token == null) return AnonymousUserId;
+            if (string.IsNullOrEmpty(token)) return AnonymousUserId;
 
             if (memoryCache.TryGetValue(token, out int id))
             {

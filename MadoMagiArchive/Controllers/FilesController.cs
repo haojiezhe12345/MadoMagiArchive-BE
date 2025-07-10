@@ -44,6 +44,7 @@ namespace MadoMagiArchive.Controllers
             //if (filename == null) return Redirect($"{id}/{Uri.EscapeDataString(Utils.NormalizeDownloadFilename(fileItem.File))}");
 
             var file = Path.Combine(StorageLocation, fileItem.File);
+            if (!System.IO.File.Exists(file)) return NotFound();
 
             string? rangeHeader = Request.Headers.Range;
             var rangeValue = !string.IsNullOrEmpty(rangeHeader) ? RangeHeaderValue.Parse(rangeHeader) : null;
@@ -80,6 +81,8 @@ namespace MadoMagiArchive.Controllers
 
             var thumbFile = Path.Combine(ThumbDir, $"tmb_{id}.jpg");
             var sourceFile = Path.Combine(StorageLocation, fileItem.File);
+
+            if (!System.IO.File.Exists(sourceFile)) return NotFound();
 
             const int thumbMaxWidth = 500;
             const int thumbMaxHeight = 200;
